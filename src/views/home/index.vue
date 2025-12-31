@@ -3,7 +3,7 @@
   <div class="title">{{title}}</div>
   <div class="content">
     <div class="btns">
-      <el-button @click="router.push('/borad')">叫号屏</el-button>
+      <el-button @click="router.push('/board')">叫号屏</el-button>
       <el-button @click="handleQuit">退出</el-button>
     </div>
   </div>
@@ -187,6 +187,8 @@ const handleQuit = async () => {
   }
   
   .contact {
+    align-items: center;
+    margin: auto;
     a {
       color: #a47148;
       text-decoration: none;
@@ -241,13 +243,13 @@ const handleQuit = async () => {
     font-size: 1.1rem;
   }
 
-  .icons {
+}
+
+.icons {
     font-size: 16px;
     position: static;
     display: block;
     width: 32px;
     height: 32px;
   }
-
-}
 </style>

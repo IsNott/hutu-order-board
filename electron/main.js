@@ -14,14 +14,14 @@ app.whenReady().then(() => {
       nodeIntegration: false,
       contextIsolation: true,
       devTools: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // webSecurity: false
     },
     autoHideMenuBar: true,
   })
-
   const { globalShortcut } = require('electron')
-  
-  globalShortcut.register('Shift+=', () => {
+
+  globalShortcut.register('Ctrl+Shift+=', () => {
     if (win.webContents.isDevToolsOpened()) {
       win.webContents.closeDevTools()
     } else {
@@ -29,8 +29,8 @@ app.whenReady().then(() => {
     }
   })
 
-  globalShortcut.register("Shift+backspace", () => {
-    if(win.webContents.navigationHistory.canGoBack()){
+  globalShortcut.register("Ctrl+Shift+backspace", () => {
+    if (win.webContents.navigationHistory.canGoBack()) {
       win.webContents.navigationHistory.goBack()
     }
   })
@@ -58,7 +58,7 @@ ipcMain.handle('quit-app', async () => {
     title: '确认',
     message: '确定要退出应用程序吗？'
   })
-  
+
   if (response === 1) {
     app.quit()
   }

@@ -31,6 +31,15 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
+  },
+  server: {
+    post: 5173,
+    proxy: {
+      '^/ws': {
+        target: 'ws://localhost:2999/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ws/, '')
+      }
+    }
   }
-  
 })

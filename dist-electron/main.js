@@ -15,18 +15,19 @@ electron.app.whenReady().then(() => {
       contextIsolation: true,
       devTools: true,
       preload: path.join(__dirname$1, "preload.js")
+      // webSecurity: false
     },
     autoHideMenuBar: true
   });
   const { globalShortcut } = require("electron");
-  globalShortcut.register("Shift+=", () => {
+  globalShortcut.register("Ctrl+Shift+=", () => {
     if (win.webContents.isDevToolsOpened()) {
       win.webContents.closeDevTools();
     } else {
       win.webContents.openDevTools();
     }
   });
-  globalShortcut.register("Shift+backspace", () => {
+  globalShortcut.register("Ctrl+Shift+backspace", () => {
     if (win.webContents.navigationHistory.canGoBack()) {
       win.webContents.navigationHistory.goBack();
     }

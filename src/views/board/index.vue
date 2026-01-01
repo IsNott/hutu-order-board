@@ -70,7 +70,7 @@ const reconnectFailCount = ref(0)
 let timer = null
 
 const disconnectState = computed(() => {
-  return reconnectFailCount.value >= import.meta.env.VITE_APP_WS_RECONNECT_MAX
+  return reconnectFailCount.value >= import.meta.env.VITE_APP_WS_RECONNECT_MAX || 5
 })
 // 模拟WebSocket推送数据
 const mockWebSocketData = () => {
@@ -177,15 +177,15 @@ const handleTakeOrder = (shopOrderNo) => {
   const index = doneList.value.findIndex(order => order.shopOrderNo === shopOrderNo)
   if (index !== -1) {
     doneList.value.splice(index, 1)
-    ElMessage.success(`订单 ${shopOrderNo} 已取餐`)
+    // ElMessage.success(`订单 ${shopOrderNo} 已取餐`)
   }
 }
 
 const handleDone = (shopOrderNo) => {
   const index = doingList.value.findIndex(order => order.shopOrderNo === shopOrderNo)
   if (index !== -1) {
+    const item = doingList.value[index]
     doingList.value.splice(index, 1)
-
     const completedOrder = {
       ...item,
       completeTime: new Date(),
@@ -197,7 +197,6 @@ const handleDone = (shopOrderNo) => {
       doneList.value = doneList.value.slice(doneList.value.length - 20)
     }
 
-    ElMessage.success(`订单 ${shopOrderNo} 制作完成`)
   }
 }
 
@@ -216,6 +215,7 @@ const connectWebSocket = () => {
     heartbeatFailCount.value = 0
     settingHeartbeat()
     console.log('WebSocket连接已打开')
+    ElMessage.success('已连接至服务器')
   }
   webSocket.value.onmessage = (event) => {
     if (event.data === import.meta.env.VITE_APP_WS_HEARTBEAT_RESP) {
@@ -224,6 +224,7 @@ const connectWebSocket = () => {
     }
     const data = JSON.parse(event.data)
     if (data.action === 'new_order') {
+      window.electronAPI.printReceipt(data.order);
       doingList.value.unshift(data.order)
     }
     if (data.action === 'finish_order') {

@@ -1,5 +1,25 @@
-# Vue 3 + Vite
+# hutu-order-board
+糊涂点餐商家叫号屏
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## 介绍
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+通过WebSocket实现商家端与服务端之间的通信，服务端下单后，服务端会推送给商家端，商家端会显示到大屏中，通过长连接感知订单制作完成、订单完成的功能。
+
+## 运行
+
+1. 运行HutuOrder - hutu-web-socket - HutuWebSocketApplication
+2. npm install
+3. npm run dev
+
+## 依赖
+
+0. node 22.12.0+
+1. Electron@latest
+2. Vite@latest
+3. Vue@latest
+4. Element Plus@latest
+
+## 截图
+![home](./doc/home.png)
+
+

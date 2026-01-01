@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>打印小票</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @media print {
+      body {
+        width: 58mm !important;
+        max-width: 58mm !important;
+        margin: 0 auto !important;
+      }
+    }
+
+    body {
+      font-family: 'SimSun', '宋体', monospace;
+      width: 58mm;
+      margin: 0 auto;
+      padding: 5mm;
+      font-size: 9pt;
+      line-height: 1.4;
+      background: white;
+    }
+
+    .receipt {
+      border: 1px dashed #ccc;
+      padding: 8px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #000;
+      padding-bottom: 8px;
+    }
+
+    .shop-name {
+      font-size: 11pt;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .shop-address {
+      font-size: 7pt;
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .order-info {
+      margin: 8px 0;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 3px 0;
+    }
+
+    .info-label {
+      color: #666;
+    }
+
+    .info-value {
+      font-weight: bold;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 11px;
+    }
+
+    .items-table th {
+      text-align: left;
+      padding: 4px 0;
+      border-bottom: 1px dashed #000;
+    }
+
+    .items-table td {
+      padding: 4px 0;
+      border-bottom: 1px dashed #ccc;
+    }
+
+    .item-name {
+      width: 40%;
+    }
+
+    .item-spec {
+      width: 30%;
+      color: #666;
+      font-size: 10px;
+    }
+
+    .item-count {
+      width: 10%;
+      text-align: center;
+    }
+
+    .item-price {
+      width: 20%;
+      text-align: right;
+    }
+
+    .sku-item {
+      display: block;
+      font-size: 10px;
+      color: #666;
+    }
+
+    .total-section {
+      margin: 10px 0;
+      padding-top: 8px;
+      border-top: 2px dashed #000;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 5px 0;
+      font-weight: bold;
+    }
+
+    .total-amount {
+      font-size: 14px;
+      color: #000;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 15px;
+      padding-top: 8px;
+      border-top: 1px dashed #000;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .code-section {
+      text-align: center;
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px dashed #000;
+    }
+
+    .pay-code {
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .wait-time {
+      color: #ff0000;
+      font-weight: bold;
+    }
+
+    .qrcode-placeholder {
+      width: 100px;
+      height: 100px;
+      background: #f5f5f5;
+      margin: 10px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #ccc;
+      color: #999;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 调试信息（打印时隐藏） -->
+  <div class="debug-info no-print">
+    <div>打印机: Xprinter XP-58</div>
+    <div>纸张宽度: 58mm (约220英文字符)</div>
+    <div id="debugStatus">状态: 初始化...</div>
+  </div>
+
+  <!-- 小票内容 -->
+  <div class="receipt">
+    <div class="header">
+      <div class="shop-name" id="shopName">店铺名称</div>
+      <div class="shop-address" id="shopAddress">店铺地址</div>
+    </div>
+
+    <div class="order-info">
+      <div class="info-row">
+        <span class="info-label">订单号:</span>
+        <span class="info-value" id="orderId">---</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">下单时间:</span>
+        <span class="info-value" id="payTime">---</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">取餐方式:</span>
+        <span class="info-value" id="pickupType">---</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">等候时间:</span>
+        <span class="info-value" id="waitTime" style="color:red;">---</span>
+      </div>
+    </div>
+
+    <!-- 商品表格 -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th class="col-name">商品</th>
+          <th class="col-spec">规格</th>
+          <th class="col-count">数量</th>
+          <th class="col-price">金额</th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <!-- 动态插入 -->
+      </tbody>
+    </table>
+
+    <div class="total-section">
+      <div class="total-row">
+        <span>商品数量:</span>
+        <span id="itemCount">0</span>
+      </div>
+      <div class="total-row">
+        <span>总金额:</span>
+        <span class="total-amount" id="totalAmount">¥0.00</span>
+      </div>
+    </div>
+
+    <div class="code-section">
+      <div style="margin-bottom:1mm;">取餐码</div>
+      <div class="pay-code" id="payCode">0000</div>
+      <div style="margin-top:1mm; font-size:7pt;">请凭此码取餐</div>
+    </div>
+
+    <div class="footer">
+      <div>感谢惠顾，欢迎再次光临！</div>
+      <div>前面还有 <span id="frontOrderCount">0</span> 单</div>
+      <div>完成时间: <span id="completeTime">---</span></div>
+    </div>
+  </div>
+
+  <script>
+    if (window.electronAPI) {
+      window.electronAPI.onPrintData((data) => {
+        renderReceipt(data);
+      });
+    } else {
+      console.log('未找到electronAPI');
+    }
+
+    // 渲染小票
+    function renderReceipt(order) {
+      // 设置店铺信息
+      document.getElementById('shopName').textContent = order.shopName || '---';
+      document.getElementById('shopAddress').textContent = order.shopAddress || '---';
+
+      // 设置订单信息
+      document.getElementById('orderId').textContent = order.orderId || '---';
+      document.getElementById('shopOrderNo').textContent = order.shopOrderNo || '---';
+      document.getElementById('payTime').textContent = order.payTime || '---';
+      document.getElementById('payType').textContent = order.payType || '---';
+      document.getElementById('pickupType').textContent = getPickupType(order.pickUpType);
+      document.getElementById('waitTime').textContent = `${order.waitTime || 0} 分钟`;
+      document.getElementById('payCode').textContent = order.payCode || '0000';
+      document.getElementById('itemCount').textContent = order.itemCount || 0;
+      document.getElementById('totalAmount').textContent = `¥${(order.totalAmount || 0).toFixed(2)}`;
+      // document.getElementById('frontOrderCount').textContent = order.frontOrderCount || 0;
+      // document.getElementById('completeTime').textContent = order.completeTime || '---';
+
+      // 渲染商品列表
+      const itemsBody = document.getElementById('itemsBody');
+      itemsBody.innerHTML = '';
+
+      if (order.itemInfo && Array.isArray(order.itemInfo)) {
+        order.itemInfo.forEach((item, index) => {
+          const row = document.createElement('tr');
+
+          // 计算商品总价
+          const itemTotalPrice = (item.price || 0) * (item.count || 1);
+
+          // 构建规格字符串
+          const specText = item.skus && item.skus.length > 0
+            ? item.skus.map(sku => sku.label).join(', ')
+            : '标准';
+
+          row.innerHTML = `
+                        <td class="item-name">${item.name || '未命名商品'}</td>
+                        <td class="item-spec">${specText}</td>
+                        <td class="item-count">${item.count || 1}</td>
+                        <td class="item-price">¥${itemTotalPrice.toFixed(2)}</td>
+                    `;
+
+          itemsBody.appendChild(row);
+        });
+      }
+    }
+
+    // 获取取餐方式文本
+    function getPickupType(type) {
+      const typeMap = {
+        1: '堂食',
+        2: '外带',
+        3: '外卖'
+      };
+      return typeMap[type] || '未知';
+    }
+
+    // 页面加载完成后通知主进程
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('打印模板已加载');
+    });
+  </script>
+</body>
+
+</html>

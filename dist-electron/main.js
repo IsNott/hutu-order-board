@@ -41,15 +41,86 @@ electron.app.whenReady().then(() => {
     globalShortcut.unregisterAll();
   });
 });
+const createPrintWindow = async (printData) => {
+  const pWin = new electron.BrowserWindow({
+    title: "打印窗口",
+    width: 800,
+    height: 600,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname$1, "preload.js")
+      // webSecurity: false
+      // devTools: true
+    },
+    autoHideMenuBar: true
+  });
+  pWin.webContents.on("did-finish-load", async () => {
+    try {
+      pWin.webContents.send("print-data", printData);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const printers = await pWin.webContents.getPrintersAsync();
+      console.log(printers);
+      if (!printers || printers.length === 0) {
+        console.error("没有可用打印机");
+        pWin.close();
+        return;
+      }
+      const defPrinter = printers.find((printer) => printer.name == "导出为WPS PDF");
+      if (!defPrinter) {
+        console.error("没有指定的打印机");
+        pWin.close();
+        return;
+      }
+      const printOptions = {
+        silent: true,
+        printBackground: true,
+        deviceName: defPrinter?.name || printers[0].name,
+        landscape: false,
+        margins: {
+          marginType: "none"
+        },
+        pageSize: {
+          width: 16510,
+          // 58mm = 16510微米（58 * 283.5 = 16510）
+          height: 1e6
+        },
+        scaleFactor: 85,
+        landscape: false,
+        pageRanges: {},
+        headerFooterEnabled: false,
+        pageRange: "all",
+        collate: true,
+        copies: 1
+      };
+      pWin.webContents.print(printOptions, (success, errorType) => {
+        if (!success) {
+          console.error("打印失败", errorType);
+        }
+        setTimeout(() => {
+          pWin.close();
+        }, 1e3);
+      });
+    } catch (error) {
+      console.error("打印过程中出错:", error);
+      pWin.close();
+    }
+  });
+  pWin.loadFile("templates/receipt.html");
+};
+electron.ipcMain.handle("print-receipt", async (event, data) => {
+  createPrintWindow(data);
+});
 electron.ipcMain.handle("quit-app", async () => {
   const { response } = await electron.dialog.showMessageBox({
     type: "question",
-    buttons: ["取消", "退出"],
-    defaultId: 1,
+    buttons: ["退出", "取消"],
+    defaultId: 0,
     title: "确认",
     message: "确定要退出应用程序吗？"
   });
-  if (response === 1) {
+  if (response === 0) {
     electron.app.quit();
   }
 });

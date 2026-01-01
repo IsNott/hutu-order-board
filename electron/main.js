@@ -50,16 +50,99 @@ app.whenReady().then(() => {
   })
 })
 
+const createPrintWindow = async (printData) => {
+  const pWin = new BrowserWindow({
+    title: '打印窗口',
+    width: 800,
+    height: 600,
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+      // webSecurity: false
+      // devTools: true
+    },
+    autoHideMenuBar: true,
+  })
+
+  // pWin.webContents.openDevTools();
+
+  pWin.webContents.on('did-finish-load', async () => {
+    try {
+      pWin.webContents.send('print-data', printData)
+
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const printers = await pWin.webContents.getPrintersAsync()
+      console.log(printers)
+      if (!printers || printers.length === 0) {
+        console.error('没有可用打印机')
+        pWin.close()
+        return
+      }
+      // const defPrinter = printers.find(printer => printer.name == import.meta.env.VITE_APP_PRINT_DIRVER)
+      const defPrinter = printers.find(printer => printer.name == '导出为WPS PDF')
+      // console.log(defPrinter);
+
+      if (!defPrinter) {
+        console.error('没有指定的打印机')
+        pWin.close()
+        return
+      }
+      const printOptions = {
+        silent: true,
+        printBackground: true,
+        deviceName: defPrinter?.name || printers[0].name,
+        landscape: false,
+        margins: {
+          marginType: 'none'
+        },
+        pageSize: {
+          width: 16510,    // 58mm = 16510微米（58 * 283.5 = 16510）
+          height: 1000000
+        },
+        scaleFactor: 85,
+        landscape: false,
+        pageRanges: {},
+        headerFooterEnabled: false,
+        pageRange: 'all',
+        collate: true,
+        copies: 1
+      }
+
+      pWin.webContents.print(printOptions, (success, errorType) => {
+        if (!success) {
+          console.error('打印失败', errorType)
+        }
+        setTimeout(() => {
+          pWin.close()
+        }, 1000)
+      })
+    } catch (error) {
+      console.error('打印过程中出错:', error)
+      pWin.close()
+    }
+  })
+
+  pWin.loadFile('templates/receipt.html')
+}
+
+ipcMain.handle('print-receipt', async (event, data) => {
+
+  createPrintWindow(data)
+})
+
 ipcMain.handle('quit-app', async () => {
   const { response } = await dialog.showMessageBox({
     type: 'question',
-    buttons: ['取消', '退出'],
-    defaultId: 1,
+    buttons: ['退出', '取消'],
+    defaultId: 0,
     title: '确认',
     message: '确定要退出应用程序吗？'
   })
 
-  if (response === 1) {
+  if (response === 0) {
     app.quit()
   }
 })
